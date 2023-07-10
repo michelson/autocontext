@@ -13,7 +13,8 @@ jobs:
 
     container:
       image: elixir:1.12.2-slim
-
+    env:
+      MIX_ENV: test
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
