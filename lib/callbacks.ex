@@ -79,7 +79,7 @@ defmodule Autocontext.EctoCallbacks do
         case @repo.insert(changeset) do
           {:ok, record} ->
             run_callbacks(:after_save, record)
-            run_callbacks(:before_create, changeset)
+            run_callbacks(:after_create, changeset)
             {:ok, record}
 
           error ->
