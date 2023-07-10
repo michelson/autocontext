@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: elixir:1.12.2-slim
+      image: elixir:1.14.2-slim
     env:
       MIX_ENV: test
     steps:
