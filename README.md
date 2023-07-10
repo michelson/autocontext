@@ -24,6 +24,10 @@ defmodule Autocontext.Accounts do
 end
 ```
 
+```elixir
+{:ok, user} = Accounts.create(@valid_attrs)
+```
+
 In this example, `:validate_username` and `:hash_password` are functions that will be called before the `save` operation. The `:send_welcome_email` and `:track_user_creation` functions will be called after the `save` operation.
 
 
