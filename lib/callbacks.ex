@@ -28,130 +28,109 @@
 
 defmodule Autocontext.EctoCallbacks do
   defmacro __using__(opts) do
-    repo = Keyword.get(opts, :repo)
-    schema = Keyword.get(opts, :schema)
-    changeset_fun = Keyword.get(opts, :changeset)
-    before_create = Keyword.get(opts, :before_create, [])
-    after_create = Keyword.get(opts, :after_create, [])
-    before_save = Keyword.get(opts, :before_save, [])
-    after_save = Keyword.get(opts, :after_save, [])
-    before_update = Keyword.get(opts, :before_update, [])
-    after_update = Keyword.get(opts, :after_update, [])
-    before_delete = Keyword.get(opts, :before_delete, [])
-    after_delete = Keyword.get(opts, :after_delete, [])
-    use_transactions = Keyword.get(opts, :use_transactions, false)
+    operations = Keyword.get(opts, :operations, [])
 
-    quote do
-      @repo unquote(repo)
-      @schema unquote(schema)
-      @changeset_fun unquote(changeset_fun)
-      @before_create_callbacks unquote(before_create)
-      @after_create_callbacks unquote(after_create)
-      @before_save_callbacks unquote(before_save)
-      @after_save_callbacks unquote(after_save)
-      @before_update_callbacks unquote(before_update)
-      @after_update_callbacks unquote(after_update)
-      @before_delete_callbacks unquote(before_delete)
-      @after_delete_callbacks unquote(after_delete)
-      @use_transactions unquote(use_transactions)
+    operations
+    |> Enum.map(fn operation ->
+      operation_name = Keyword.get(operation, :name)
+      operation_name = if operation_name, do: "#{operation_name}_", else: ""
+      repo = Keyword.get(operation, :repo)
+      schema = Keyword.get(operation, :schema)
+      changeset_fun = Keyword.get(operation, :changeset)
+      use_transaction = Keyword.get(operation, :use_transaction, false)
+      before_create = Keyword.get(operation, :before_create, [])
+      after_create = Keyword.get(operation, :after_create, [])
+      before_save = Keyword.get(operation, :before_save, [])
+      after_save = Keyword.get(operation, :after_save, [])
+      before_update = Keyword.get(operation, :before_update, [])
+      after_update = Keyword.get(operation, :after_update, [])
+      before_delete = Keyword.get(operation, :before_delete, [])
+      after_delete = Keyword.get(operation, :after_delete, [])
 
-      def before_save(callback) when is_atom(callback), do: @before_save_callbacks ++ [callback]
-      def after_save(callback) when is_atom(callback), do: @after_save_callbacks ++ [callback]
+      quote do
+        @repo unquote(repo)
+        @schema unquote(schema)
+        @changeset_fun unquote(changeset_fun)
+        @use_transaction unquote(use_transaction)
+        @before_create_callbacks unquote(before_create)
+        @after_create_callbacks unquote(after_create)
+        @before_save_callbacks unquote(before_save)
+        @after_save_callbacks unquote(after_save)
+        @before_update_callbacks unquote(before_update)
+        @after_update_callbacks unquote(after_update)
+        @before_delete_callbacks unquote(before_delete)
+        @after_delete_callbacks unquote(after_delete)
 
-      def before_create(callback) when is_atom(callback),
-        do: @before_create_callbacks ++ [callback]
+        def unquote(:"#{operation_name}create")(params) do
+          operation = fn ->
+            changeset = @changeset_fun.(Kernel.struct(@schema), params)
+            run_callbacks(:before_save, changeset)
+            run_callbacks(:before_create, changeset)
 
-      def after_create(callback) when is_atom(callback), do: @after_create_callbacks ++ [callback]
+            case @repo.insert(changeset) do
+              {:ok, record} ->
+                run_callbacks(:after_save, record)
+                run_callbacks(:after_create, changeset)
+                {:ok, record}
 
-      def before_update(callback) when is_atom(callback),
-        do: @before_update_callbacks ++ [callback]
+              error ->
+                error
+            end
+          end
 
-      def after_update(callback) when is_atom(callback), do: @after_update_callbacks ++ [callback]
+          run_with_or_without_transaction(operation)
+        end
 
-      def before_delete(callback) when is_atom(callback),
-        do: @before_delete_callbacks ++ [callback]
+        def unquote(:"#{operation_name}update")(record, params) do
+          operation = fn ->
+            run_callbacks(:before_update, params)
+            run_callbacks(:before_save, record)
+            {:ok, record} = @repo.update(record)
+            run_callbacks(:after_update, record)
+            run_callbacks(:after_save, record)
+            {:ok, record}
+          end
 
-      def after_delete(callback) when is_atom(callback), do: @after_delete_callbacks ++ [callback]
+          run_with_or_without_transaction(operation)
+        end
 
-      def create(params) do
-        changeset = @changeset_fun.(Kernel.struct(@schema), params)
-        run_callbacks(:before_save, changeset)
-        run_callbacks(:before_create, changeset)
+        def unquote(:"#{operation_name}delete")(record) do
+          operation = fn ->
+            run_callbacks(:before_delete, record)
+            {:ok, _} = @repo.delete(record)
+            run_callbacks(:after_delete, record)
+            :ok
+          end
 
-        operation = fn ->
-          case @repo.insert(changeset) do
-            {:ok, record} ->
-              run_callbacks(:after_save, record)
-              run_callbacks(:after_create, record)
-              {:ok, record}
+          run_with_or_without_transaction(operation)
+        end
 
-            error ->
-              error
+        defp run_with_or_without_transaction(operation) do
+          if @use_transaction do
+            @repo.transaction(operation)
+          else
+            operation.()
           end
         end
 
-        if @use_transactions, do: transaction(operation), else: operation.()
-      end
+        defp run_callbacks(callback_type, params) do
+          callbacks =
+            case callback_type do
+              :before_save -> @before_save_callbacks
+              :after_save -> @after_save_callbacks
+              :before_create -> @before_create_callbacks
+              :after_create -> @after_create_callbacks
+              :before_update -> @before_update_callbacks
+              :after_update -> @after_update_callbacks
+              :before_delete -> @before_delete_callbacks
+              :after_delete -> @after_delete_callbacks
+            end
 
-      def update(record, params) do
-        run_callbacks(:before_update, params)
-        run_callbacks(:before_save, record)
-
-        operation = fn ->
-          case @repo.update(record) do
-            {:ok, record} ->
-              run_callbacks(:after_update, record)
-              run_callbacks(:after_save, record)
-              {:ok, record}
-
-            error ->
-              error
-          end
+          Enum.each(callbacks, fn callback ->
+            apply(__MODULE__, callback, [params])
+          end)
         end
-
-        if @use_transactions, do: transaction(operation), else: operation.()
       end
-
-      def delete(record) do
-        run_callbacks(:before_delete, record)
-
-        operation = fn ->
-          case @repo.delete(record) do
-            {:ok, _} ->
-              run_callbacks(:after_delete, record)
-              {:ok, :deleted}
-
-            error ->
-              error
-          end
-        end
-
-        if @use_transactions, do: transaction(operation), else: operation.()
-      end
-
-      defp run_callbacks(callback_type, params) do
-        callbacks =
-          case callback_type do
-            :before_save -> @before_save_callbacks
-            :after_save -> @after_save_callbacks
-            :before_create -> @before_create_callbacks
-            :after_create -> @after_create_callbacks
-            :before_update -> @before_update_callbacks
-            :after_update -> @after_update_callbacks
-            :before_delete -> @before_delete_callbacks
-            :after_delete -> @after_delete_callbacks
-          end
-
-        Enum.each(callbacks, fn callback ->
-          apply(__MODULE__, callback, [params])
-        end)
-      end
-
-      defp transaction(operation) do
-        Ecto.Multi.new()
-        |> Ecto.Multi.run(:operation, fn _, _ -> operation.() end)
-        |> @repo.transaction()
-      end
-    end
+    end)
   end
 end
