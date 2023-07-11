@@ -39,6 +39,7 @@ defmodule Autocontext.EctoCallbacks do
     after_update = Keyword.get(opts, :after_update, [])
     before_delete = Keyword.get(opts, :before_delete, [])
     after_delete = Keyword.get(opts, :after_delete, [])
+    use_transactions = Keyword.get(opts, :use_transactions, false)
 
     quote do
       @repo unquote(repo)
@@ -52,6 +53,7 @@ defmodule Autocontext.EctoCallbacks do
       @after_update_callbacks unquote(after_update)
       @before_delete_callbacks unquote(before_delete)
       @after_delete_callbacks unquote(after_delete)
+      @use_transactions unquote(use_transactions)
 
       def before_save(callback) when is_atom(callback), do: @before_save_callbacks ++ [callback]
       def after_save(callback) when is_atom(callback), do: @after_save_callbacks ++ [callback]
@@ -76,31 +78,55 @@ defmodule Autocontext.EctoCallbacks do
         run_callbacks(:before_save, changeset)
         run_callbacks(:before_create, changeset)
 
-        case @repo.insert(changeset) do
-          {:ok, record} ->
-            run_callbacks(:after_save, record)
-            run_callbacks(:after_create, changeset)
-            {:ok, record}
+        operation = fn ->
+          case @repo.insert(changeset) do
+            {:ok, record} ->
+              run_callbacks(:after_save, record)
+              run_callbacks(:after_create, record)
+              {:ok, record}
 
-          error ->
-            error
+            error ->
+              error
+          end
         end
+
+        if @use_transactions, do: transaction(operation), else: operation.()
       end
 
       def update(record, params) do
         run_callbacks(:before_update, params)
         run_callbacks(:before_save, record)
-        {:ok, record} = @repo.update(record)
-        run_callbacks(:after_update, record)
-        run_callbacks(:after_save, record)
-        {:ok, record}
+
+        operation = fn ->
+          case @repo.update(record) do
+            {:ok, record} ->
+              run_callbacks(:after_update, record)
+              run_callbacks(:after_save, record)
+              {:ok, record}
+
+            error ->
+              error
+          end
+        end
+
+        if @use_transactions, do: transaction(operation), else: operation.()
       end
 
       def delete(record) do
         run_callbacks(:before_delete, record)
-        {:ok, _} = @repo.delete(record)
-        run_callbacks(:after_delete, record)
-        :ok
+
+        operation = fn ->
+          case @repo.delete(record) do
+            {:ok, _} ->
+              run_callbacks(:after_delete, record)
+              {:ok, :deleted}
+
+            error ->
+              error
+          end
+        end
+
+        if @use_transactions, do: transaction(operation), else: operation.()
       end
 
       defp run_callbacks(callback_type, params) do
@@ -119,6 +145,12 @@ defmodule Autocontext.EctoCallbacks do
         Enum.each(callbacks, fn callback ->
           apply(__MODULE__, callback, [params])
         end)
+      end
+
+      defp transaction(operation) do
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:operation, fn _, _ -> operation.() end)
+        |> @repo.transaction()
       end
     end
   end
