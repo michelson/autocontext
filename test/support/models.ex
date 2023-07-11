@@ -28,7 +28,8 @@ defmodule Autocontext.Accounts do
     changeset: &Autocontext.User.changeset/2,
     repo: Autocontext.Repo,
     before_save: [:validate_username, :hash_password],
-    after_save: [:send_welcome_email, :track_user_creation]
+    after_save: [:send_welcome_email, :track_user_creation],
+    use_transactions: true
 
   def validate_username(changeset), do: changeset
   def hash_password(changeset), do: changeset
