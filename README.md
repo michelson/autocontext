@@ -10,13 +10,7 @@
 - Works seamlessly with Ecto's changesets and other features.
 - Multiple changesets and multiple schemas.
 
-Certainly! Here is a draft for the README, documenting the usage of your new callbacks module:
-
 ---
-
-# Autocontext.EctoCallbacks
-
-`Autocontext.EctoCallbacks` is an Elixir library that provides a mechanism to define and run callbacks for Ecto-based operations, like `create`, `update`, and `delete`. The callbacks can be configured per operation and include `before` and `after` hooks.
 
 ## Installation
 
