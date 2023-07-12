@@ -36,16 +36,16 @@ defmodule Autocontext.Accounts do
         repo: Autocontext.Repo,
         schema: Autocontext.User,
         changeset: &Autocontext.User.changeset/2,
-        use_transaction: true,
+        use_transaction: false,
         before_save: [:validate_username, :hash_password],
         after_save: [:send_welcome_email, :track_user_creation]
       ],
       [
         name: :bar,
         repo: Autocontext.Repo,
-        schema: Autocontext.Account,
+        schema: Autocontext.User,
         changeset: &Autocontext.User.changeset/2,
-        use_transaction: false,
+        use_transaction: true,
         before_save: [:validate_username],
         after_save: [:send_welcome_email]
       ]

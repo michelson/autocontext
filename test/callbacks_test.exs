@@ -23,6 +23,13 @@ defmodule Autocontext.CallbacksTest do
     assert user.email == "john_doe@example.com"
   end
 
+  test "bar_create/1 successfully creates a User with valid attributes" do
+    {:ok, user} = Accounts.bar_create(@valid_attrs)
+
+    assert user.name == "john_doe"
+    assert user.email == "john_doe@example.com"
+  end
+
   test "finders" do
     {:ok, user} = Accounts.create(@valid_attrs)
 
