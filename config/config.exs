@@ -6,8 +6,8 @@ config :autocontext, repo: Autocontext.Repo
 
 config :autocontext, Autocontext.Repo,
   adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "",
+  username: System.get_env("POSTGRES_USER") || "postgres",
+  password: System.get_env("POSTGRES_PASSWORD") || "",
   database: "autocontext_test",
   hostname: "localhost",
   poolsize: 10,
