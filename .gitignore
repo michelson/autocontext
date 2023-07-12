@@ -24,3 +24,5 @@ autocontext-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+doc

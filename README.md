@@ -16,7 +16,7 @@
 
 ## Installation
 
-Add the `autocontext_ecto_callbacks` to your list of dependencies in `mix.exs`:
+Add the `autocontext` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do

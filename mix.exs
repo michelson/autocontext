@@ -6,8 +6,10 @@ defmodule Autocontext.MixProject do
       app: :autocontext,
       version: "0.1.0",
       elixir: "~> 1.14",
+      package: package(),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      description: "Autocontext acts as ActiveRecord callbacks",
       elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
@@ -22,6 +24,7 @@ defmodule Autocontext.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:ecto, "~> 3.10.0"},
       {:ecto_sql, "~> 3.7"},
       {:postgrex, ">= 0.0.0"},
@@ -32,6 +35,20 @@ defmodule Autocontext.MixProject do
     ]
   end
 
+  defp package do
+    [
+      name: :taglet,
+      files: ["lib", "mix.exs", "README*"],
+      maintainers: ["michelson"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/michelson/autocontext",
+        "Docs" => "https://hexdocs.pm/michelson/autocontext.html"
+      }
+    ]
+  end
+
+  defp elixirc_paths(:dev), do: ["lib"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(:ci), do: ["lib", "test/support"]
 end
