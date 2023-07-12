@@ -33,7 +33,7 @@ Define a context module for your Ecto operations and `use Autocontext.EctoCallba
 ```elixir
 defmodule MyApp.Accounts do
   use Autocontext.EctoCallbacks, operations: [
-    %{
+    [
       name: :user,
       repo: MyApp.Repo,
       schema: MyApp.User,
@@ -41,8 +41,8 @@ defmodule MyApp.Accounts do
       use_transaction: true,
       before_save: [:validate_username, :hash_password],
       after_save: [:send_welcome_email, :track_user_creation]
-    },
-    %{
+    ],
+    [
       name: :admin,
       repo: MyApp.Repo,
       schema: MyApp.Admin,
@@ -50,7 +50,7 @@ defmodule MyApp.Accounts do
       use_transaction: false,
       before_create: [:check_admin_limit],
       after_create: [:send_admin_email]
-    }
+    ]
   ]
 
   # Callback implementations...
