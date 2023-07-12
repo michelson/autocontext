@@ -8,28 +8,83 @@
 - Fully customizable with the ability to specify your own callback functions.
 - Supports the Repo option, which allows you to use different Repo configurations.
 - Works seamlessly with Ecto's changesets and other features.
+- Multiple changesets and multiple schemas.
 
-## Usage
+Certainly! Here is a draft for the README, documenting the usage of your new callbacks module:
 
-In the context module where you will use the schema, here's how you could use `Autocontext.EctoCallbacks`:
+---
+
+# Autocontext.EctoCallbacks
+
+`Autocontext.EctoCallbacks` is an Elixir library that provides a mechanism to define and run callbacks for Ecto-based operations, like `create`, `update`, and `delete`. The callbacks can be configured per operation and include `before` and `after` hooks.
+
+## Installation
+
+Add the `autocontext_ecto_callbacks` to your list of dependencies in `mix.exs`:
 
 ```elixir
-defmodule Autocontext.Accounts do
-  use Autocontext.EctoCallbacks,
-    schema: User,
-    changeset: &User.changeset/2,
-    repo: Repo,
-    before_save: [:validate_username, :hash_password],
-    after_save: [:send_welcome_email, :track_user_creation]
+def deps do
+  [
+    {:autocontext, "~> 0.1.0"}
+  ]
 end
 ```
 
+## Usage
+
+Define a context module for your Ecto operations and `use Autocontext.EctoCallbacks`:
+
 ```elixir
-{:ok, user} = Accounts.create(@valid_attrs)
+defmodule MyApp.Accounts do
+  use Autocontext.EctoCallbacks, operations: [
+    %{
+      name: :user,
+      repo: MyApp.Repo,
+      schema: MyApp.User,
+      changeset: &MyApp.User.changeset/2,
+      use_transaction: true,
+      before_save: [:validate_username, :hash_password],
+      after_save: [:send_welcome_email, :track_user_creation]
+    },
+    %{
+      name: :admin,
+      repo: MyApp.Repo,
+      schema: MyApp.Admin,
+      changeset: &MyApp.Admin.changeset/2,
+      use_transaction: false,
+      before_create: [:check_admin_limit],
+      after_create: [:send_admin_email]
+    }
+  ]
+
+  # Callback implementations...
+end
 ```
 
-In this example, `:validate_username` and `:hash_password` are functions that will be called before the `save` operation. The `:send_welcome_email` and `:track_user_creation` functions will be called after the `save` operation.
+In the above configuration:
 
+- `:name` defines a unique name for the operation. This name is used to generate the actual Ecto operation functions: `user_create`, `user_update`, `user_delete`, `admin_create`, `admin_update`, `admin_delete`. If the option is nil then a `create`, `delete`, and `update` methods will be created for the schema.
+- `:repo` is the Ecto repository to interact with.
+- `:schema` is the Ecto schema for the data structure.
+- `:changeset` is the changeset function used for the data validation and transformations.
+- `:use_transaction` is a boolean flag to indicate whether to perform the operations within a database transaction or not.
+- The remaining keys (`:before_save`, `:after_save`, `:before_create`, `:after_create`, etc.) define the callback functions to be called before or after the actual Ecto operations. These callbacks must be implemented within the same module and they should return the changeset or record they receive.
+
+Then, you can call the functions as follows:
+
+```elixir
+params = %{name: "john_doe", email: "john_doe@example.com", age: 10}
+
+case MyApp.Accounts.user_create(params) do
+  {:ok, user} ->
+    IO.puts("User created successfully.")
+
+  {:error, changeset} ->
+    IO.puts("Failed to create user.")
+end
+```
+
+---
 
 # Finders
 
