@@ -1,6 +1,8 @@
-# Autocontext.EctoCallbacks
+[![Elixir CI](https://github.com/michelson/autocontext/actions/workflows/test.yml/badge.svg)](https://github.com/michelson/autocontext/actions/workflows/test.yml)
 
-`Autocontext.EctoCallbacks` is an Elixir library that provides ActiveRecord-like callbacks for Ecto, Elixir's database wrapper. This allows you to specify functions to be executed before and after certain operations (`insert`, `update`, `delete`), enhancing control over these operations and maintaining a clean and expressive code base.
+# Autocontext
+
+`Autocontext` is an Elixir library that provides ActiveRecord-like callbacks for Ecto, Elixir's database wrapper. This allows you to specify functions to be executed before and after certain operations (`insert`, `update`, `delete`), enhancing control over these operations and maintaining a clean and expressive code base.
 
 ## Features
 
@@ -8,7 +10,7 @@
 - Fully customizable with the ability to specify your own callback functions.
 - Supports the Repo option, which allows you to use different Repo configurations.
 - Works seamlessly with Ecto's changesets and other features.
-- Multiple changesets and multiple schemas.
+- Multiple changesets and multiple schemas are allowed.
 
 ---
 
