@@ -13,6 +13,7 @@ on:
 # Sets the ENV `MIX_ENV` to `test` for running tests
 env:
   MIX_ENV: test
+  POSTGRES_PASSWORD: "postgres"
 
 permissions:
   contents: read
@@ -92,13 +93,9 @@ jobs:
       run: mix compile #--warnings-as-errors
 
     - name: DB Create
-      env:
-        POSTGRES_PASSWORD: postgres
       run: mix ecto.create
 
     - name: DB Migrate
-      env:
-        POSTGRES_PASSWORD: postgres
       run: mix ecto.migrate
 
     # Step: Check that the checked in code has already been formatted.
