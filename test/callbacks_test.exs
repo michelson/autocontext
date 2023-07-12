@@ -1,6 +1,6 @@
 defmodule Autocontext.CallbacksTest do
   use ExUnit.Case, async: true
-
+  import Mox
   import Ecto.Query, only: [from: 2]
   alias Autocontext.Repo
   alias Autocontext.Accounts
@@ -16,9 +16,25 @@ defmodule Autocontext.CallbacksTest do
 
   @valid_attrs %{name: "john_doe", email: "john_doe@example.com", age: "10"}
 
+  test "create user with callbacks transactional" do
+    Autocontext.CallbackMock
+    |> expect(:validate_username, fn changeset -> changeset end)
+    |> expect(:hash_password, fn changeset -> changeset end)
+
+    assert {:error, %Ecto.Changeset{}} = Accounts.foo_create(%{})
+
+    assert {:ok, %User{}} = Accounts.foo_create(@valid_attrs)
+  end
+
   test "create/1 successfully creates a User with valid attributes" do
     {:ok, user} = Accounts.create(@valid_attrs)
 
+    assert user.name == "john_doe"
+    assert user.email == "john_doe@example.com"
+  end
+
+  test "foo_create/1 successfully creates a User with valid attributes" do
+    {:ok, user} = Accounts.foo_create(@valid_attrs)
     assert user.name == "john_doe"
     assert user.email == "john_doe@example.com"
   end
@@ -33,6 +49,12 @@ defmodule Autocontext.CallbacksTest do
 
   test "create/1 returns an error with invalid attributes" do
     {:error, changeset} = Accounts.create(%{})
+
+    assert changeset.valid? == false
+  end
+
+  test "create_foo/1 returns an error with invalid attributes" do
+    {:error, changeset} = Accounts.foo_create(%{})
 
     assert changeset.valid? == false
   end
