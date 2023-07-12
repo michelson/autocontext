@@ -91,7 +91,12 @@ jobs:
     - name: Compiles without warnings
       run: mix compile #--warnings-as-errors
 
-    - name: Migrate
+    - name: DB Create
+      env:
+        POSTGRES_PASSWORD: postgres
+      run: mix ecto.create
+
+    - name: DB Migrate
       env:
         POSTGRES_PASSWORD: postgres
       run: mix ecto.migrate
