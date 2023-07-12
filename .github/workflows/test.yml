@@ -30,6 +30,9 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/autocontext_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: autocontext_test
       MIX_ENV: test
     steps:
     - uses: actions/checkout@v2
